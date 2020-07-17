@@ -23,8 +23,13 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(16, 32, 3),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
         self.fc1 = nn.Sequential(
-            nn.Linear(16 * 5 * 5, 120),
+            nn.Linear(32 * 1 * 1, 120),
             nn.ReLU()
         )
         self.fc2 = nn.Sequential(
