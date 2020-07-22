@@ -5,8 +5,49 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 若能使用cuda，则使用cuda
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
+
+
+
+# class Net(nn.Module):
+#     def __init__(self):
+#         super(Net, self).__init__()
+#         self.features = nn.Sequential(
+#             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(kernel_size=2, stride=2),
+#             nn.Conv2d(64, 192, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(kernel_size=2, stride=2),
+#             nn.Conv2d(192, 384, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(384, 256, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(256, 256, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(kernel_size=2, stride=2),
+#         )
+#
+#
+#         self.classifier = nn.Sequential(
+#             nn.Dropout(),
+#             nn.Linear(256 * 4 * 4, 4096),
+#             nn.ReLU(inplace=True),
+#             nn.Dropout(),
+#             nn.Linear(4096,4096),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(4096, 10),
+#         )
+#
+#     def forward(self, x):
+#         x = self.features(x)
+#         x = x.view(x.size()[0], 256 * 4 * 4)
+#         x = self.classifier(x)
+#         return x
 
 
 
@@ -41,6 +82,7 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
+        x = self.conv3(x)
         x = x.view(x.size()[0], -1)
         x = self.fc1(x)
         x = self.fc2(x)
@@ -52,11 +94,11 @@ class Net(nn.Module):
 
 
 if __name__ == '__main__':
+
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+    trainset = torchvision.datasets.CIFAR10(root='/core7/wanghaoran/cifar10', train=True,
                                             download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                               shuffle=True, num_workers=2)
@@ -65,10 +107,11 @@ if __name__ == '__main__':
                'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     net = Net().to(device)
+    net.cuda()
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-    for epoch in range(80):  # loop over the dataset multiple times
+    for epoch in range(2):  # loop over the dataset multiple times
 
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
@@ -97,18 +140,19 @@ if __name__ == '__main__':
 
     print('Finished Training')
 
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+    testset = torchvision.datasets.CIFAR10(root='/core7/wanghaoran/cifar10', train=False,
                                            download=True, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                              shuffle=False, num_workers=2)
     correct = 0
     total = 0
 
-    correct = 0
-    total = 0
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images = inputs.to(device)
+            labels = labels.to(device)
+
             outputs = net(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -122,6 +166,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images = inputs.to(device)
+            labels = labels.to(device)
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
